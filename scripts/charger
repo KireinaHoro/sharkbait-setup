@@ -1,0 +1,4 @@
+#!/system/bin/sh
+
+touch /run/.android-reboot
+/sbin/charger.real
