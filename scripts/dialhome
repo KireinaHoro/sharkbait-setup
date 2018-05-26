@@ -1,0 +1,3 @@
+#!/system/bin/sh
+
+ssh -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no -l root -i /data/ssh/id_ed25519 localhost $@
