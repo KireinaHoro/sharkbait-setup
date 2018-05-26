@@ -1,0 +1,50 @@
+--- init.rc.orig	2018-05-26 08:03:40.592753600 +0800
++++ init.rc	2018-05-26 09:34:58.064267800 +0800
+@@ -29,6 +29,8 @@
+ 
+     # Mount cgroup mount point for cpu accounting
+     mount cgroup none /acct cpuacct
++    # use container's cpuacct pseudo-fs instead of host's
++    mount none /acct/lxc/android /acct bind
+     mkdir /acct/uid
+ 
+     # root memory control cgroup, used by lmkd
+@@ -154,6 +156,8 @@
+     # Create cgroup mount points for process groups
+     mkdir /dev/cpuctl
+     mount cgroup none /dev/cpuctl cpu
++    # use container's cpuctl pseudo-fs instead of host's
++    mount none /dev/cpuctl/lxc/android /dev/cpuctl bind
+     chown system system /dev/cpuctl
+     chown system system /dev/cpuctl/tasks
+     chmod 0666 /dev/cpuctl/tasks
+@@ -163,6 +167,8 @@
+     # sets up initial cpusets for ActivityManager
+     mkdir /dev/cpuset
+     mount cpuset none /dev/cpuset
++    # use container's cpuset pseudo-fs instead of host's
++    mount none /dev/cpuset/lxc/android /dev/cpuset bind
+ 
+     # this ensures that the cpusets are present and usable, but the device's
+     # init.rc must actually set the correct cpus
+@@ -719,13 +725,13 @@
+     critical
+     group root system wakelock
+ 
+-service console /system/bin/sh
+-    class core
+-    console
+-    disabled
+-    user shell
+-    group shell log readproc
+-    seclabel u:r:shell:s0
++#service console /system/bin/sh
++#    class core
++#    console
++#    disabled
++#    user shell
++#    group shell log readproc
++#    seclabel u:r:shell:s0
+ 
+ on property:ro.debuggable=1
+     # Give writes to anyone for the trace folder on debug builds.
