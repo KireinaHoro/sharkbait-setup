@@ -16,6 +16,7 @@ blkid
 cpio
 gunzip
 patch
+readlink
 )
 
 detect_tools() {
@@ -47,7 +48,8 @@ die() {
 check_perm
 detect_tools
 tmpdir=/tmp/deploy-android-lxc_$(uuidgen)
-dir="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null && pwd )"
+dir="$( dirname $( readlink -f "${BASH_SOURCE[0]}" ) )"
+FILES=( "${FILES[@]/#/"${dir}/"}" )
 check_device_support
 devdir="$dir"/devices/$DEVICE
 patches="$devdir"/patches

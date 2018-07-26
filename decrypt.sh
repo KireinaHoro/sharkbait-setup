@@ -2,6 +2,15 @@
 
 DEVICE="$@"
 
+tools=(
+readlink
+)
+
+detect_tools() {
+    for a in ${tools[@]}; do
+        which $a >/dev/null 2>&1 || die "Required tool $a not found in PATH"
+    done
+}
 check_perm() {
     [ "$(whoami)" = "root" ] || die "This script must be ran as root"
 }
@@ -21,7 +30,8 @@ die() {
 }
 
 check_perm
-dir="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null && pwd )"
+detect_tools
+dir="$( dirname $( readlink -f "${BASH_SOURCE[0]}" ) )"
 check_device_support
 devdir="$dir"/devices/$DEVICE
 
