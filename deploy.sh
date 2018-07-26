@@ -49,7 +49,8 @@ detect_tools
 tmpdir=/tmp/deploy-android-lxc_$(uuidgen)
 dir="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null && pwd )"
 check_device_support
-patches="$dir"/devices/$DEVICE/patches
+devdir="$dir"/devices/$DEVICE
+patches="$devdir"/patches
 mkdir -p $tmpdir || die "Failed to create temp dir $tmpdir"
 
 mkdir -p $ROOTFS || die "Failed to create Android LXC root $ROOTFS"
@@ -78,13 +79,14 @@ cat $ramdisk | gunzip | cpio -vidD "$ROOTFS" || die "Failed to unpack initrd int
 info "Unpacked initrd into $ROOTFS"
 
 cd $ROOTFS
-patch -p0 < <(cat "$patches/$DEVICE"/*) || die "Failed to apply patch to $ROOTFS"
+patch -p0 < <(cat "$patches"/*) || die "Failed to apply patch to $ROOTFS"
 info "Applied patches to $ROOTFS"
 
-## TODO: fstab: per-device setup
+cat "$devdir"/fstab.android >> /etc/fstab || die "Failed to append Android fstab"
+info "Appended Android fstab to system fstab"
 
 lxc-info -n $CONTAINER_NAME || die "Failed to get information for container $CONTAINER_NAME"
 
-info "All done! Try \`lxc-start android\`."
+info "All done! Try \`mount -a && lxc-start android\`."
 
 clean && exit 0
