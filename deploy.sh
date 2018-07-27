@@ -32,7 +32,7 @@ check_device_support() {
     [ -d "$dir/devices/$DEVICE" ] || die "Device $DEVICE is currently not supported"
 }
 clean() {
-    rm -rf $tmpdir >/dev/null 2>&1 || true
+    [ ! -z "$tmpdir" ] && rm -rf $tmpdir >/dev/null 2>&1 || true
 }
 info() {
     echo "[INFO] $@" 
@@ -45,6 +45,8 @@ die() {
     clean && exit 1
 }
 
+setup_mark=/var/.sharkbait-setup-done
+[ -f $setup_mark ] && die "System setup already done"
 check_perm
 detect_tools
 tmpdir=/tmp/deploy-android-lxc_$(uuidgen)
@@ -135,6 +137,7 @@ warn "sshd configuration for security considerations."
 
 lxc-info -n $CONTAINER_NAME || die "Failed to get information for container $CONTAINER_NAME"
 
+touch $setup_mark || die "Failed to place setup finish mark in /var"
 info "All done! Proceed with the rest of the User Guide."
 
 clean && exit 0
