@@ -56,6 +56,8 @@ newbootimg=$tmpdir/new.img
 adb devices | grep "device$" || \
     die "Device not found or unauthorized.  Fix adb access and try again."
 info "Found device"
+adb root || die "Failed to restart adbd as root"
+sleep 2
 
 cd $tmpdir
 adb pull $bootblk $bootimg || die "Failed to pull boot.img from device"
@@ -77,7 +79,11 @@ info "Modified fstab.$DEVICE to disable encryption"
 pushd rootfs >/dev/null
 find . | cpio --create --format='newc' | gzip > ../initrd.img || die "Failed to create new initrd"
 popd >/dev/null
-sed -i -e '/bootsize/d' bootimg.cfg || die "Failed to modify bootimg.cfg to remove size limit"
+sed -i bootimg.cfg \
+    -e '/bootsize/d' \
+    -e 's/enforcing/permissive/g' \
+    -e 's/\(cmdline.=.\)/\1androidboot.selinux=permissive /g' \
+    || die "Failed to modify bootimg.cfg to remove size limit"
 abootimg --create $newbootimg -f bootimg.cfg -k zImage -r initrd.img || die "Failed to create new boot.img"
 info "Created new boot.img"
 
@@ -87,9 +93,9 @@ info "Waiting 10 seconds for device to show up in fastboot mode..."
 sleep 10
 fastboot flash boot $newbootimg || die "Failed to flash new boot.img"
 info "Flashed new boot.img"
-fastboot erase userdata || die "Failed to erase userdata"
+fastboot format userdata || die "Failed to format userdata"
 info "Erased userdata"
-fastboot erase cache || die "Failed to erase cache"
+fastboot format cache || die "Failed to format cache"
 info "Erased cache"
 fastboot reboot || die "Failed to reboot phone"
 info "Rebooting phone..."
