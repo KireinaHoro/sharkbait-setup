@@ -84,8 +84,33 @@ cd $ROOTFS
 patch -p0 < <(cat "$patches"/*) || die "Failed to apply patch to $ROOTFS"
 info "Applied patches to $ROOTFS"
 
+mv $ROOTFS/sbin/charger{,.real} || die "Failed to install charger wrapper"
+cp "$dir"/scripts/charger $ROOTFS/sbin/charger || die "Failed to install charger wrapper"
+info "Installed charger wrapper"
+
 cat "$devdir"/fstab.android >> /etc/fstab || die "Failed to append Android fstab"
 info "Appended Android fstab to system fstab"
+
+disable_service=(
+keymaps
+termencoding
+)
+for a in "${disable_services[@]}"; do
+    sudo rc-update del $a || die "Failed to disable unnecessary service $a"
+done
+info "Disabled unnecessary services."
+ln -sf /etc/init.d/lxc{,.android} || die "Failed to create Android container service"
+rc-update add lxc.android default || die "Failed to enable Android container service"
+info "Enabled Android container service"
+
+sed -i -e 's/\(^[^#].*agetty.*$\)/#\1/' /etc/inittab || die "Failed to disable non-existent ttys in /etc/inittab"
+info "Disabled non-existent ttys in /etc/inittab"
+if [ -f "$devdir"/serial-consoles ]; then
+    cat "$devdir"/serial-consoles >> /etc/inittab || die "Failed to enable serial consoles"
+    info "Enabled serial consoles"
+else
+    info "This device does not have serial consoles available"
+fi
 
 lxc-info -n $CONTAINER_NAME || die "Failed to get information for container $CONTAINER_NAME"
 
