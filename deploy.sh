@@ -86,10 +86,15 @@ info "Applied patches to $ROOTFS"
 
 mv $ROOTFS/sbin/charger{,.real} || die "Failed to install charger wrapper"
 cp "$dir"/scripts/charger $ROOTFS/sbin/charger || die "Failed to install charger wrapper"
+chmod 750 $ROOTFS/sbin/charger || die "Failed to set permissions for charger wrapper"
 info "Installed charger wrapper"
 
 cat "$devdir"/fstab.android >> /etc/fstab || die "Failed to append Android fstab"
 info "Appended Android fstab to system fstab"
+for a in $(grep -E '^[^#]+$' "$devdir"/fstab.android | cut -d' ' -f2); do
+    mkdir -p $a || die "Failed to create mountpoint $a"
+done
+info "Created mountpoints for Android"
 
 disable_service=(
 keymaps
@@ -112,8 +117,24 @@ else
     info "This device does not have serial consoles available"
 fi
 
+ssh_root=/var/lib/android/data/ssh
+mount -a || die "Failed to mount all filesystems"
+mkdir -p $ssh_root || die "Failed to create $ssh_root"
+info "Will now create ssh keys for Android to dial back to Gentoo..."
+ssh-keygen -t ed25519 -f $ssh_root/id_ed25519 -C "Android dialhome" \
+    || die "Failed to create ssh keys"
+mkdir -p /root/.ssh || die "Failed to create root ssh directory"
+cat $ssh_root/id_ed25519.pub >> /root/.ssh/authorized_keys || die "Failed to add public key to root auth list"
+cp "$dir"/scripts/dialhome $ssh_root || die "Failed to copy dialhome script to $ssh_home"
+chmod 700 $ssh_root/dialhome || die "Failed to set permissions for dialhome script"
+chown -R 2000:2000 $ssh_root || die "Failed to set owners for $ssh_root"
+rc-update add sshd default || die "Failed to enable sshd service"
+info "Use /data/ssh/dialhome in Android to ssh back to Gentoo."
+warn "sshd with default configuration enabled.  You may want to change"
+warn "sshd configuration for security considerations."
+
 lxc-info -n $CONTAINER_NAME || die "Failed to get information for container $CONTAINER_NAME"
 
-info "All done! Try \`mount -a && lxc-start android\`."
+info "All done! Proceed with the rest of the User Guide."
 
 clean && exit 0
