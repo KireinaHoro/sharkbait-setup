@@ -20,6 +20,8 @@ patch
 readlink
 )
 
+umask 022
+
 detect_tools() {
     for a in ${tools[@]}; do
         which $a >/dev/null 2>&1 || die "Required tool $a not found in PATH"
@@ -92,12 +94,21 @@ cp "$dir"/scripts/charger $ROOTFS/sbin/charger || die "Failed to install charger
 chmod 750 $ROOTFS/sbin/charger || die "Failed to set permissions for charger wrapper"
 info "Installed charger wrapper"
 
-cat "$devdir"/fstab.android >> /etc/fstab || die "Failed to append Android fstab"
-info "Appended Android fstab to system fstab"
-for a in $(awk '$4!~"^.*bind.*$"&&$0!~"^$"&&$0!~"^#.*$"{print $2}' fstab.android); do
-    mkdir -p $a || die "Failed to create mountpoint $a"
+cat "$devdir"/fstab.android > /etc/fstab || die "Failed to write Android fstab"
+info "Wrote Android fstab to system fstab"
+for a in $(awk '$0!~"^$"&&$0!~"^#.*$"{print $2}' "$devdir"/fstab.android); do
+    if [ ! -d "$a" ]; then
+        if [ -L "$a" ]; then
+            rm -f "$a" || die "Failed to remove stale symlink $a"
+        fi
+        mkdir -p "$a" || die "Failed to create mountpoint $a"
+    fi
 done
 info "Created mountpoints for Android"
+while read -r cmdline; do
+    ln -s $cmdline || die "Failed to create symlinks of block devices"
+done <<< $(awk '$1~"^/dev/.*$"{{$2=$1}{sub(/dev/,"dev/block")}{print $1" "$2}}' "$devdir"/fstab.android)
+info "Created symlinks for block devices to mount"
 
 disable_service=(
 keymaps
@@ -121,7 +132,7 @@ else
 fi
 
 ssh_root=/var/lib/android/data/ssh
-mount -a || die "Failed to mount all filesystems"
+mount -a || die "Failed to mount some of the filesystems"
 mkdir -p $ssh_root || die "Failed to create $ssh_root"
 info "Will now create ssh keys for Android to dial back to Gentoo..."
 ssh-keygen -t ed25519 -f $ssh_root/id_ed25519 -C "Android dialhome" \
