@@ -12,6 +12,7 @@ config
 
 tools=(
 abootimg
+awk
 blkid
 cpio
 gunzip
@@ -93,7 +94,7 @@ info "Installed charger wrapper"
 
 cat "$devdir"/fstab.android >> /etc/fstab || die "Failed to append Android fstab"
 info "Appended Android fstab to system fstab"
-for a in $(grep -E '^[^#]+$' "$devdir"/fstab.android | cut -d' ' -f2); do
+for a in $(awk '$4!~"^.*bind.*$"&&$0!~"^$"&&$0!~"^#.*$"{print $2}' fstab.android); do
     mkdir -p $a || die "Failed to create mountpoint $a"
 done
 info "Created mountpoints for Android"
