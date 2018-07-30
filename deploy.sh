@@ -110,12 +110,19 @@ while read -r cmdline; do
 done <<< $(awk '$1~"^/dev/.*$"{{$2=$1}{sub(/dev/,"dev/block")}{print $1" "$2}}' "$devdir"/fstab.android)
 info "Created symlinks for block devices to mount"
 
-disable_service=(
+disable_services_default=(
 keymaps
 termencoding
 )
-for a in "${disable_services[@]}"; do
-    sudo rc-update del $a || die "Failed to disable unnecessary service $a"
+for a in "${disable_services_default[@]}"; do
+    sudo rc-update del $a default || die "Failed to disable unnecessary service $a"
+done
+disable_services_sysinit=(
+udev
+udev-trigger
+)
+for a in "${disable_services_sysinit[@]}"; do
+    sudo rc-update del $a sysinit || die "Failed to disable unnecessary service $a"
 done
 info "Disabled unnecessary services."
 ln -sf /etc/init.d/lxc{,.android} || die "Failed to create Android container service"
