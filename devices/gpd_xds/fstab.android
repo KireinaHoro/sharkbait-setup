@@ -1,0 +1,10 @@
+# Android mounts
+/dev/mmcblk0p22 /var/lib/android/system ext4 ro,barrier=1,inode_readahead_blks=8 0 0
+/dev/mmcblk0p23 /var/lib/android/cache ext4 noatime,nosuid,nodev,barrier=1,data=ordered,nomblk_io_submit,noauto_da_alloc 0 0
+/dev/mmcblk0p24 /var/lib/android/data ext4 noatime,nosuid,nodev,barrier=1,data=ordered,nomblk_io_submit,noauto_da_alloc,inode_readahead_blks=8 0 0
+
+# Bind into container
+/var/lib/android/system /var/lib/lxc/android/rootfs/system none bind 0 0
+/var/lib/android/cache /var/lib/lxc/android/rootfs/cache none bind 0 0
+/var/lib/android/data /var/lib/lxc/android/rootfs/data none bind 0 0
+/run /var/lib/lxc/android/rootfs/run none bind 0 0
