@@ -1,0 +1,1 @@
+s0:12345:respawn:/sbin/agetty -L 921600n1 ttyMT0 vt100

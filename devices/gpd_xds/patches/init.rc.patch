@@ -1,0 +1,52 @@
+diff --git a/init.rc.orig b/init.rc
+index 908cdd0..c2fd60d 100755
+--- a/init.rc.orig
++++ b/init.rc
+@@ -45,6 +45,8 @@ on init
+ 
+     # Mount cgroup mount point for cpu accounting
+     mount cgroup none /acct cpuacct
++    # use container's cpuacct pseudo-fs instead of host's
++    mount none /acct/lxc/android /acct bind
+     mkdir /acct/uid
+ 
+     # Create energy-aware scheduler tuning nodes
+@@ -133,6 +135,8 @@ on init
+     # Create cgroup mount points for process groups
+     mkdir /dev/cpuctl
+     mount cgroup none /dev/cpuctl cpu
++    # use container's cpuctl pseudo-fs instead of host's
++    mount none /dev/cpuctl/lxc/android /dev/cpuctl bind
+     chown system system /dev/cpuctl
+     chown system system /dev/cpuctl/tasks
+     chmod 0666 /dev/cpuctl/tasks
+@@ -151,6 +155,8 @@ on init
+     # sets up initial cpusets for ActivityManager
+     mkdir /dev/cpuset
+     mount cpuset none /dev/cpuset
++    # use container's cpuset pseudo-fs instead of host's
++    mount none /dev/cpuset/lxc/android /dev/cpuset bind
+ 
+     # this ensures that the cpusets are present and usable, but the device's
+     # init.rc must actually set the correct cpus
+@@ -626,13 +632,13 @@ service healthd /sbin/healthd
+     seclabel u:r:healthd:s0
+     group root system wakelock
+ 
+-service console /system/bin/sh
+-    class core
+-    console
+-    disabled
+-    user shell
+-    group shell log readproc
+-    seclabel u:r:shell:s0
++#service console /system/bin/sh
++#    class core
++#    console
++#    disabled
++#    user shell
++#    group shell log readproc
++#    seclabel u:r:shell:s0
+ 
+ on property:ro.debuggable=1
+     # Give writes to anyone for the trace folder on debug builds.
